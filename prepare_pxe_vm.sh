@@ -78,6 +78,14 @@ main() {
   apt upgrade -y
 
   log "Step 3/7: Install required packages"
+  mkdir -p /etc/dnsmasq.d
+  cat > /etc/dnsmasq.d/pxe.conf <<EOF
+port=0
+dhcp-range=192.168.0.100,192.168.0.200,12h
+dhcp-boot=pxelinux.0
+enable-tftp
+tftp-root=${PXE_TFTP_DIR}
+EOF
   apt install -y dnsmasq syslinux-common pxelinux nginx wget unzip
 
   log "Step 4/7: Create PXE directories"
@@ -93,6 +101,9 @@ main() {
     fi
   done
   mkdir -p "${PXE_TFTP_DIR}/pxelinux.cfg"
+
+  log "Step 4.2: Enable dnsmasq"
+  systemctl enable --now dnsmasq
 
   log "Step 5/7: Configure Nginx"
   configure_nginx_root
@@ -123,7 +134,7 @@ main() {
   echo "ISO mount:"
   ls -lah "${PROXMOX_MOUNT}" | head -n 20 || true
 
-  log "Done. Next: configure dnsmasq (DHCP+TFTP) + PXE boot menu."
+  log "Done. Next: create PXE boot menu in ${PXE_TFTP_DIR}/pxelinux.cfg/default"
 }
 
 main "$@"
