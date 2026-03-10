@@ -1,18 +1,30 @@
+# ============================================================
+# harx-prox — Proxmox VE automated installer answer file
+# Proxmox VE 8.x / proxmox-auto-install-assistant format
+# Docs: https://pve.proxmox.com/wiki/Automated_Installation
+# ============================================================
+
 [global]
-keyboard = "fr"
-country = "fr"
-timezone = "Europe/Paris"
+keyboard    = "fr"
+country     = "fr"
+timezone    = "Europe/Paris"
 
 [network]
-iface = "auto"
-hostname = "harxen-lab"
-address = "dhcp"
+source      = "from-dhcp"       # use DHCP for the initial install NIC
+# The values below are applied AFTER the install as the static management IP.
+# If you prefer pure DHCP post-install, remove cidr/gateway/dns entries.
+cidr        = "dhcp"
+dns         = "192.168.1.1"     # ← adjust to your router/DNS
 
 [disk-setup]
-disk_list = ["nvme0n1"]
-filesystem = "ext4"
-lvm = true
-swap = 4096
+disk_list   = ["nvme0n1"]
+filesystem  = "ext4"            # "zfs" also supported
+lvm         = true
+hdsize      = 0                 # 0 = use entire disk
+swapsize    = 4                 # GiB  (0 to disable)
+maxroot     = 0                 # 0 = auto (remaining after swap+data)
+minfree     = 16                # GiB kept free in the VG
+maxvz       = 0                 # 0 = use all remaining space for data
 
 [auth]
-root_password = "Proxmox123!"
+root_password = "Proxmox123!"   # CHANGE before production use
