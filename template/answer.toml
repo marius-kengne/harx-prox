@@ -1,0 +1,18 @@
+[global]
+keyboard = "fr"
+country = "fr"
+timezone = "Europe/Paris"
+
+[network]
+iface = "auto"
+hostname = "harxen-lab"
+address = "dhcp"
+
+[disk-setup]
+disk_list = ["nvme0n1"]
+filesystem = "ext4"
+lvm = true
+swap = 4096
+
+[auth]
+root_password = "Proxmox123!"
