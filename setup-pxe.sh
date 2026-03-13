@@ -10,7 +10,7 @@ PXE_TFTP_DIR="/srv/tftp"
 PXE_HTTP_DIR="/srv/http"
 PROXMOX_DIR="$PXE_HTTP_DIR/proxmox"
 PROXMOX_MOUNT="/mnt/proxmox-iso"
-PROXMOX_ISO_URL="https://download.proxmox.com/iso/proxmox-ve_8.3-1.iso"
+PROXMOX_ISO_URL="https://enterprise.proxmox.com/iso/proxmox-ve_9.1-1.iso"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/templates"
