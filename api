@@ -1,0 +1,122 @@
+////////////////        service 
+import {
+  Inject,
+  Injectable,
+  BadGatewayException,
+} from '@nestjs/common';
+import axios from 'axios';
+
+import {
+  TOKEN_PROVIDER,
+  TokenProvider,
+} from '../auth/token-provider.interface';
+
+@Injectable()
+export class ApigeeService {
+  private readonly baseUrl: string;
+
+  constructor(
+    @Inject(TOKEN_PROVIDER)
+    private readonly tokenProvider: TokenProvider,
+  ) {
+    const base = process.env.APIGEE_BASE_URL;
+    const org = process.env.APIGEE_ORGANIZATION;
+
+    if (!base || !org) {
+      throw new Error('Configuration Apigee incomplète');
+    }
+
+    this.baseUrl =
+      `${base.replace(/\/$/, '')}/organizations/${encodeURIComponent(org)}`;
+  }
+
+  private async get(path: string): Promise<unknown> {
+    try {
+      const token = await this.tokenProvider.getAccessToken();
+
+      const response = await axios.get(
+        `${this.baseUrl}/${path}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 10000,
+        },
+      );
+
+      return response.data;
+    } catch {
+      throw new BadGatewayException(
+        'Impossible de récupérer les données Apigee',
+      );
+    }
+  }
+
+  getApis() {
+    return this.get('apis');
+  }
+
+  getDevelopers() {
+    return this.get('developers?expand=true');
+  }
+
+  getApps() {
+    return this.get('apps?expand=true');
+  }
+
+  getApiProducts() {
+    return this.get('apiproducts?expand=true');
+  }
+}
+
+
+
+//////////// controller
+
+
+import { Controller, Get } from '@nestjs/common';
+import { ApigeeService } from './apigee.service';
+
+@Controller('api/apigee')
+export class ApigeeController {
+  constructor(
+    private readonly apigeeService: ApigeeService,
+  ) {}
+
+  @Get('apis')
+  getApis() {
+    return this.apigeeService.getApis();
+  }
+
+  @Get('developers')
+  getDevelopers() {
+    return this.apigeeService.getDevelopers();
+  }
+
+  @Get('apps')
+  getApps() {
+    return this.apigeeService.getApps();
+  }
+
+  @Get('apiproducts')
+  getApiProducts() {
+    return this.apigeeService.getApiProducts();
+  }
+}
+
+
+
+////////////////// module
+
+import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
+import { ApigeeController } from './apigee.controller';
+import { ApigeeService } from './apigee.service';
+
+@Module({
+  imports: [AuthModule],
+  controllers: [ApigeeController],
+  providers: [ApigeeService],
+})
+export class ApigeeModule {}
+
