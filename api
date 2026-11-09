@@ -120,3 +120,43 @@ import { ApigeeService } from './apigee.service';
 })
 export class ApigeeModule {}
 
+
+
+
+
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Préfixe commun des routes du BFF
+  // Les contrôleurs utiliseront par exemple @Controller('apigee')
+  app.setGlobalPrefix('api');
+
+  // Configuration CORS pour Angular en local
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: false,
+  });
+
+  // Validation des données entrantes
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  const port = Number(process.env.PORT || 3000);
+
+  // Écoute sur toutes les interfaces pour OpenShift
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`BFF démarré sur le port ${port}`);
+}
+
+bootstrap();
