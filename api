@@ -311,3 +311,12 @@ catch (error: unknown) {
     "Service d'authentification Google indisponible"
   );
 }
+
+
+
+
+$uri = [Uri]"https://oauth2.googleapis.com/token"
+$proxy = [System.Net.Http.HttpClient]::DefaultProxy
+
+"Proxy bypassed: $($proxy.IsBypassed($uri))"
+"Proxy configured: $($proxy.GetProxy($uri) -ne $uri)"
