@@ -295,3 +295,19 @@ export class ApigeeService {
   }
 }
 
+
+
+catch (error: unknown) {
+  const err = error as Error & {
+    code?: string;
+    cause?: Error & { code?: string };
+  };
+
+  this.logger.error(
+    `ADC failure: ${err.code ?? err.cause?.code ?? 'UNKNOWN'}`
+  );
+
+  throw new ServiceUnavailableException(
+    "Service d'authentification Google indisponible"
+  );
+}
