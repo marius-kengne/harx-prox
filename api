@@ -160,3 +160,138 @@ async function bootstrap() {
 }
 
 bootstrap();
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////
+
+
+import {
+  Injectable,
+  Inject,
+  BadGatewayException,
+  ServiceUnavailableException,
+  Logger,
+} from '@nestjs/common';
+
+import axios, { AxiosError } from 'axios';
+
+import { TOKEN_PROVIDER } from '../auth/token-provider.interface';
+import type { TokenProvider } from '../auth/token-provider.interface';
+
+@Injectable()
+export class ApigeeService {
+  private readonly logger = new Logger(ApigeeService.name);
+  private readonly baseUrl: string;
+
+  constructor(
+    @Inject(TOKEN_PROVIDER)
+    private readonly tokenProvider: TokenProvider,
+  ) {
+    const baseUrl = process.env.APIGEE_BASE_URL;
+    const organization = process.env.APIGEE_ORGANIZATION;
+
+    if (!baseUrl || !organization) {
+      throw new Error(
+        'Configuration manquante : APIGEE_BASE_URL ou APIGEE_ORGANIZATION',
+      );
+    }
+
+    this.baseUrl =
+      `${baseUrl.replace(/\/$/, '')}/organizations/${encodeURIComponent(organization)}`;
+  }
+
+  /**
+   * Méthode commune pour effectuer un appel GET
+   * vers l'API de Management Apigee X.
+   */
+  private async get<T = unknown>(endpoint: string): Promise<T> {
+    let accessToken: string;
+
+    // 1. Récupération du token via ADC ou IAM
+    try {
+      accessToken = await this.tokenProvider.getAccessToken();
+    } catch {
+      this.logger.error(
+        'Impossible d’obtenir un access token Google Cloud',
+      );
+
+      throw new ServiceUnavailableException(
+        'Service d’authentification Google indisponible',
+      );
+    }
+
+    // 2. Appel de l'API de Management Apigee X
+    try {
+      const response = await axios.get<T>(
+        `${this.baseUrl}/${endpoint}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+          },
+          timeout: 10000,
+        },
+      );
+
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+
+        this.logger.error(
+          `Échec appel Apigee : HTTP ${axiosError.response?.status ?? 'inconnu'}`,
+        );
+      } else {
+        this.logger.error('Erreur inattendue lors de l’appel Apigee');
+      }
+
+      throw new BadGatewayException(
+        'Impossible de récupérer les données Apigee',
+      );
+    }
+  }
+
+  /**
+   * GET /apis
+   * Liste des API proxies
+   */
+  getApis() {
+    return this.get('apis');
+  }
+
+  /**
+   * GET /developers?expand=true
+   * Liste détaillée des développeurs
+   */
+  getDevelopers() {
+    return this.get('developers?expand=true');
+  }
+
+  /**
+   * GET /apps?expand=true
+   * Liste détaillée des applications
+   */
+  getApps() {
+    return this.get('apps?expand=true');
+  }
+
+  /**
+   * GET /apiproducts?expand=true
+   * Liste détaillée des produits API
+   */
+  getApiProducts() {
+    return this.get('apiproducts?expand=true');
+  }
+}
+
